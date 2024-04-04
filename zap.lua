@@ -90,6 +90,9 @@ local function createElement(class)
   self.class = class
   self._pressed = {}
   self._releaseHandle = false
+  if self.class.init then
+    self.class.init(self)
+  end
   return self
 end
 
@@ -103,6 +106,7 @@ local elementClassMetatable = {
 ---An ElementClass contains methods for rendering the element and interacting with it.<br>
 ---You can call an ElementClass to create a new Element with it.
 ---@class Zap.ElementClass: Zap.Element
+---@field init fun(self: Zap.Element) Called when the element is created.
 ---@field render fun(self: Zap.Element, x: number, y: number, width: number, height: number) Called when the element needs to render its contents to the screen. Additional elements may be rendered here.
 ---@field mouseEntered fun(self: Zap.Element) Called when the mouse enters this element.
 ---@field mouseExited fun(self: Zap.Element) Called when the mouse exits this element.
