@@ -1,5 +1,9 @@
-local PATH = (...):gsub('%.init$', '')
-print(PATH)
+local function aabsIntersect(x1, y1, w1, h1, x2, y2, w2, h2)
+  return x1 < x2 + w2 and
+      x2 < x1 + w1 and
+      y1 < y2 + h2 and
+      y2 < y1 + h1
+end
 
 -- A stack of scenes that are currently being drawn into.
 ---@type Zap.Scene[]
@@ -18,9 +22,9 @@ end
 ---@field package _w number
 ---@field package _h number
 ---@field package _hovered boolean
+---@field package _prevHovered boolean
 ---@field package _pressed table<any, true>
 ---@field package _parent? Zap.Element
----@field package _releaseHandle boolean
 local Element = {}
 Element.__index = Element
 
@@ -84,12 +88,25 @@ function Element:isPressed(button)
   end
 end
 
+---Returns whether `other` is inside of `self`'s hierarchy - that is, if `self` or any of its children contain `other`.
+---@param other Zap.Element
+function Element:isInHierarchy(other)
+  ---@type Zap.Element?
+  local parent = other
+  while parent do
+    if parent == self then
+      return true
+    end
+    parent = parent:getParent()
+  end
+  return false
+end
+
 ---@param class Zap.ElementClass
 local function createElement(class)
   local self = setmetatable({}, Element)
   self.class = class
   self._pressed = {}
-  self._releaseHandle = false
   if self.class.init then
     self.class.init(self)
   end
@@ -205,19 +222,35 @@ end
 
 ---@package
 function Scene:resolveOverlappingElements()
+  local prevOverlapping = self._overlappingElements
+
   self._overlappingElements = {}
 
-  for i, e in ipairs(self._renderedElements) do
-    local prevHovered = e._hovered
-    if self:doesMouseOverlapElement(e) then
+  -- TODO implement spatial hashing here if needed
+  for _, e in ipairs(self._renderedElements) do
+    e._prevHovered = e._hovered
+    e._hovered = false
+    local hovered = self:doesMouseOverlapElement(e)
+    if hovered then
+      for i = #self._overlappingElements, 1, -1 do
+        local other = self._overlappingElements[i]
+        if aabsIntersect(e._x, e._y, e._w, e._h, other._x, other._y, other._w, other._h) and not other:isInHierarchy(e) then
+          table.remove(self._overlappingElements, i)
+        end
+      end
       table.insert(self._overlappingElements, e)
-      e._hovered = true
-    else
-      e._hovered = false
     end
-    if not prevHovered and e._hovered and e.class.mouseEntered then
+  end
+
+  for _, e in ipairs(self._overlappingElements) do
+    e._hovered = true
+    if not e._prevHovered and e._hovered and e.class.mouseEntered then
       e.class.mouseEntered(e)
-    elseif prevHovered and not e._hovered and e.class.mouseExited then
+    end
+  end
+
+  for _, e in ipairs(prevOverlapping) do
+    if not e._hovered and e.class.mouseExited then
       e.class.mouseExited(e)
     end
   end
@@ -231,6 +264,7 @@ local function createScene()
   self._began = false
   self._renderedElements = {}
   self._pressedElements = {}
+  self._overlappingElements = {}
   self._releaseHandle = false
   return self
 end
