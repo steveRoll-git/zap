@@ -25,6 +25,7 @@ end
 ---@field package _prevHovered boolean
 ---@field package _pressed table<any, true>
 ---@field package _parent? Zap.Element
+---@field package _contained boolean
 local Element = {}
 Element.__index = Element
 
@@ -100,6 +101,12 @@ function Element:isInHierarchy(other)
     parent = parent:getParent()
   end
   return false
+end
+
+---Set whether an element considers itself hovered only if its parent is hovered as well.
+---@param contained boolean
+function Element:setContained(contained)
+  self._contained = contained
 end
 
 ---@param class Zap.ElementClass
@@ -230,28 +237,29 @@ function Scene:resolveOverlappingElements()
   for _, e in ipairs(self._renderedElements) do
     e._prevHovered = e._hovered
     e._hovered = false
-    local hovered = self:doesMouseOverlapElement(e)
+    local hovered = self:doesMouseOverlapElement(e) and (not e._contained or e._parent._hovered)
     if hovered then
       for i = #self._overlappingElements, 1, -1 do
         local other = self._overlappingElements[i]
         if aabsIntersect(e._x, e._y, e._w, e._h, other._x, other._y, other._w, other._h) and not other:isInHierarchy(e) then
+          other._hovered = false
           table.remove(self._overlappingElements, i)
         end
       end
+      e._hovered = true
       table.insert(self._overlappingElements, e)
-    end
-  end
-
-  for _, e in ipairs(self._overlappingElements) do
-    e._hovered = true
-    if not e._prevHovered and e._hovered and e.class.mouseEntered then
-      e.class.mouseEntered(e)
     end
   end
 
   for _, e in ipairs(prevOverlapping) do
     if not e._hovered and e.class.mouseExited then
       e.class.mouseExited(e)
+    end
+  end
+
+  for _, e in ipairs(self._overlappingElements) do
+    if not e._prevHovered and e.class.mouseEntered then
+      e.class.mouseEntered(e)
     end
   end
 end
