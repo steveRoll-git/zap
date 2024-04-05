@@ -273,7 +273,6 @@ local function createScene()
   self._renderedElements = {}
   self._pressedElements = {}
   self._overlappingElements = {}
-  self._releaseHandle = false
   return self
 end
 
