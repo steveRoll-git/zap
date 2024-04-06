@@ -212,6 +212,18 @@ function Scene:mouseReleased(button)
   end
 end
 
+---Raise an event to all rendered elements.<br>
+---If any element's class has a method with the same name as the event, it will be called with the given parameters.
+---@param event string
+---@param ... any
+function Scene:raiseEvent(event, ...)
+  for _, e in ipairs(self._renderedElements) do
+    if e.class[event] then
+      e.class[event](e, ...)
+    end
+  end
+end
+
 ---Begins a frame where elements can be drawn.
 function Scene:begin()
   assert(not self._began, "attempt to begin a Scene more than once")
