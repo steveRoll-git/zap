@@ -96,6 +96,18 @@ function Element:getRelativeMouse()
   return self._scene._mouseX - self._x, self._scene._mouseY - self._y
 end
 
+---Returns the width that this element desires to be rendered with.
+---@return number width
+function Element:desiredWidth()
+  return self.class.desiredWidth(self)
+end
+
+---Returns the height that this element desires to be rendered with.
+---@return number height
+function Element:desiredHeight()
+  return self.class.desiredHeight(self)
+end
+
 ---Returns whether `other` is inside of `self`'s hierarchy - that is, if `self` or any of its children contain `other`.
 ---@param other Zap.Element
 function Element:isInHierarchy(other)
@@ -145,6 +157,8 @@ local elementClassMetatable = {
 ---@field mouseReleased fun(self: Zap.Element, button: any) Called when a mouse button is released over this element.
 ---@field mouseClicked fun(self: Zap.Element, button: any) Called when a mouse button is clicked (pressed & released) over this element.
 ---@field mouseMoved fun(self: Zap.Element, x: number, y: number) Called when the mouse is moved over the element. `x` and `y` are absolute coordinates.
+---@field desiredWidth fun(self: Zap.Element): number Returns the width that this element desires to be rendered with.
+---@field desiredHeight fun(self: Zap.Element): number Returns the height that this element desires to be rendered with.
 ---@operator call:Zap.Element
 
 ---Creates a new `ElementClass`.
