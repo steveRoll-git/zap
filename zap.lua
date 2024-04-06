@@ -89,6 +89,13 @@ function Element:isPressed(button)
   end
 end
 
+---Returns the position of the mouse relative to this element's position.
+---@return number x
+---@return number y
+function Element:getRelativeMouse()
+  return self._scene._mouseX - self._x, self._scene._mouseY - self._y
+end
+
 ---Returns whether `other` is inside of `self`'s hierarchy - that is, if `self` or any of its children contain `other`.
 ---@param other Zap.Element
 function Element:isInHierarchy(other)
