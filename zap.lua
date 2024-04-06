@@ -144,6 +144,7 @@ local elementClassMetatable = {
 ---@field mousePressed fun(self: Zap.Element, button: any) Called when a mouse button is pressed over this element.
 ---@field mouseReleased fun(self: Zap.Element, button: any) Called when a mouse button is released over this element.
 ---@field mouseClicked fun(self: Zap.Element, button: any) Called when a mouse button is clicked (pressed & released) over this element.
+---@field mouseMoved fun(self: Zap.Element, x: number, y: number) Called when the mouse is moved over the element. `x` and `y` are absolute coordinates.
 ---@operator call:Zap.Element
 
 ---Creates a new `ElementClass`.
@@ -172,6 +173,11 @@ function Scene:setMousePosition(x, y)
   self._mouseX = x
   self._mouseY = y
   self:resolveOverlappingElements()
+  for _, e in ipairs(self._overlappingElements) do
+    if e.class.mouseMoved then
+      e.class.mouseMoved(e, x, y)
+    end
+  end
 end
 
 ---Call when a mouse button has been pressed.
