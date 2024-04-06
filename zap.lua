@@ -27,7 +27,9 @@ end
 ---@field package _parent? Zap.Element
 ---@field package _contained boolean
 local Element = {}
-Element.__index = Element
+Element.__index = function(t, i)
+  return Element[i] or t.class[i]
+end
 
 ---Render the element, and set its position & size.
 ---@param x number
