@@ -187,9 +187,15 @@ function Scene:setMousePosition(x, y)
   self._mouseX = x
   self._mouseY = y
   self:resolveOverlappingElements()
-  for _, e in ipairs(self._overlappingElements) do
-    if e.class.mouseMoved then
-      e.class.mouseMoved(e, x, y)
+  if self._pressedElement then
+    if self._pressedElement.class.mouseMoved then
+      self._pressedElement.class.mouseMoved(self._pressedElement, x, y)
+    end
+  else
+    for _, e in ipairs(self._overlappingElements) do
+      if e.class.mouseMoved then
+        e.class.mouseMoved(e, x, y)
+      end
     end
   end
 end
