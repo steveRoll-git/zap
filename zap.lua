@@ -91,6 +91,13 @@ function Element:isPressed(button)
   end
 end
 
+---Returns the position of the mouse in the scene.
+---@return number x
+---@return number y
+function Element:getAbsoluteMouse()
+  return self._scene._mouseX, self._scene._mouseY
+end
+
 ---Returns the position of the mouse relative to this element's position.
 ---@return number x
 ---@return number y
