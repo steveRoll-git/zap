@@ -166,6 +166,7 @@ local elementClassMetatable = {
 ---@field mouseReleased fun(self: Zap.Element, button: any) Called when a mouse button is released over this element.
 ---@field mouseClicked fun(self: Zap.Element, button: any) Called when a mouse button is clicked (pressed & released) over this element.
 ---@field mouseMoved fun(self: Zap.Element, x: number, y: number) Called when the mouse is moved over the element. `x` and `y` are absolute coordinates.
+---@field wheelMoved fun(self: Zap.Element, x: number, y: number) Called when the mousewheel is moved over the element.
 ---@field desiredWidth fun(self: Zap.Element): number Returns the width that this element desires to be rendered with.
 ---@field desiredHeight fun(self: Zap.Element): number Returns the height that this element desires to be rendered with.
 ---@operator call:Zap.Element
@@ -246,6 +247,17 @@ function Scene:mouseReleased(button)
     if e ~= pressedElement and e.class.mouseReleased then
       e.class.mouseReleased(e, button)
     end
+  end
+end
+
+---Call when the mousewheel has moved.
+---@param x any
+---@param y any
+function Scene:wheelMoved(x, y)
+  self:resolveOverlappingElements()
+  local last = self._overlappingElements[#self._overlappingElements]
+  if last and last.class.wheelMoved then
+    last.class.wheelMoved(last, x, y)
   end
 end
 
