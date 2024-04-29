@@ -214,13 +214,12 @@ end
 ---@param button any
 function Scene:mousePressed(button)
   self:resolveOverlappingElements()
-  for i, e in ipairs(self._overlappingElements) do
-    e._pressed[button] = true
-    if e.class.mousePressed then
-      e.class.mousePressed(e, button)
-    end
-    self._pressedElement = e
+  local last = self._overlappingElements[#self._overlappingElements]
+  last._pressed[button] = true
+  if last.class.mousePressed then
+    last.class.mousePressed(last, button)
   end
+  self._pressedElement = last
 end
 
 ---Call when a mouse button has been released.
