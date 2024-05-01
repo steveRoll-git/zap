@@ -331,6 +331,12 @@ function Scene:resolveOverlappingElements()
   end
 end
 
+---Returns the element currently pressed by the mouse.
+---@return Zap.Element
+function Scene:getPressedElement()
+  return self._pressedElement
+end
+
 ---Creates a new scene.
 ---@return Zap.Scene scene
 local function createScene()
