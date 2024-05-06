@@ -47,6 +47,7 @@ function Element:render(x, y, width, height)
   table.insert(self._scene._parentStack, self)
 
   table.insert(self._scene._renderedElements, self)
+  self._scene._renderedElementsLookup[self] = true
 
   self._x = x
   self._y = y
@@ -184,6 +185,8 @@ end
 ---@field package _parentStack Zap.Element[]
 ---@field package _began boolean
 ---@field package _renderedElements Zap.Element[]
+---@field package _renderedElementsLookup table<Zap.Element, true>
+---@field package _prevRenderedElements Zap.Element[]
 ---@field package _overlappingElements Zap.Element[]
 ---@field package _pressedElement Zap.Element
 ---@field package _releaseHandle boolean
@@ -276,7 +279,9 @@ end
 function Scene:begin()
   assert(not self._began, "attempt to begin a Scene more than once")
   self._began = true
+  self._prevRenderedElements = self._renderedElements
   self._renderedElements = {}
+  self._renderedElementsLookup = {}
   table.insert(sceneStack, self)
 end
 
@@ -285,6 +290,14 @@ function Scene:finish()
   assert(self._began and sceneStack[#sceneStack] == self, "attempt to finish a Scene that did not begin")
   self._began = false
   table.remove(sceneStack)
+
+  if self._prevRenderedElements then
+    for _, e in ipairs(self._prevRenderedElements) do
+      if not self._renderedElementsLookup[e] then
+        e._hovered = false
+      end
+    end
+  end
 end
 
 ---Does the mouse overlap this element's AABB?
