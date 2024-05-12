@@ -54,7 +54,9 @@ function Element:render(x, y, width, height)
   self._w = width
   self._h = height
 
-  self.class.render(self, x, y, width, height)
+  if self.class.render then
+    self.class.render(self, x, y, width, height)
+  end
 
   table.remove(self._scene._parentStack)
 end
