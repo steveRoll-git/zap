@@ -359,6 +359,13 @@ function Scene:getPressedElement()
   return self._pressedElement
 end
 
+---Returns a list of elements the mouse is currently hovering over.<br>
+---(This is also the table used internally by the scene, so please don't modify it.)
+---@return Zap.Element[]
+function Scene:getHoveredElements()
+  return self._overlappingElements
+end
+
 ---Creates a new scene.
 ---@return Zap.Scene scene
 local function createScene()
