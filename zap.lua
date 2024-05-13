@@ -48,6 +48,7 @@ function Element:render(x, y, width, height)
 
   table.insert(self._scene._renderedElements, self)
   self._scene._renderedElementsLookup[self] = true
+  self._scene._renderedElementsHash = self._scene._renderedElementsHash .. tostring(self)
 
   self._x = x
   self._y = y
@@ -188,7 +189,9 @@ end
 ---@field package _began boolean
 ---@field package _renderedElements Zap.Element[]
 ---@field package _renderedElementsLookup table<Zap.Element, true>
+---@field package _renderedElementsHash string
 ---@field package _prevRenderedElements Zap.Element[]
+---@field package _prevRenderedElementsHash string
 ---@field package _overlappingElements Zap.Element[]
 ---@field package _pressedElement Zap.Element
 ---@field package _releaseHandle boolean
@@ -289,8 +292,10 @@ function Scene:begin()
   assert(not self._began, "attempt to begin a Scene more than once")
   self._began = true
   self._prevRenderedElements = self._renderedElements
+  self._prevRenderedElementsHash = self._renderedElementsHash
   self._renderedElements = {}
   self._renderedElementsLookup = {}
+  self._renderedElementsHash = ""
   table.insert(sceneStack, self)
 end
 
@@ -306,6 +311,10 @@ function Scene:finish()
         e._hovered = false
       end
     end
+  end
+
+  if self._renderedElementsHash ~= self._prevRenderedElementsHash then
+    self:resolveOverlappingElements()
   end
 end
 
