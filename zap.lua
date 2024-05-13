@@ -375,6 +375,13 @@ function Scene:getHoveredElements()
   return self._overlappingElements
 end
 
+---Returns whether `e` has been rendered in the last frame.
+---@param e Zap.Element
+---@return boolean
+function Scene:isElementRendered(e)
+  return not not self._renderedElementsLookup[e]
+end
+
 ---Creates a new scene.
 ---@return Zap.Scene scene
 local function createScene()
