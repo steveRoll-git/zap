@@ -168,7 +168,7 @@ local elementClassMetatable = {
 ---@field mousePressed fun(self: Zap.Element, button: any) Called when a mouse button is pressed over this element.
 ---@field mouseReleased fun(self: Zap.Element, button: any) Called when a mouse button is released over this element.
 ---@field mouseClicked fun(self: Zap.Element, button: any) Called when a mouse button is clicked (pressed & released) over this element.
----@field mouseMoved fun(self: Zap.Element, x: number, y: number) Called when the mouse is moved over the element. `x` and `y` are absolute coordinates.
+---@field mouseMoved fun(self: Zap.Element, x: number, y: number, dx: number, dy: number) Called when the mouse is moved over the element. `x` and `y` are absolute coordinates.
 ---@field wheelMoved fun(self: Zap.Element, x: number, y: number) Called when the mousewheel is moved over the element.
 ---@field desiredWidth fun(self: Zap.Element): number Returns the width that this element desires to be rendered with.
 ---@field desiredHeight fun(self: Zap.Element): number Returns the height that this element desires to be rendered with.
@@ -195,21 +195,25 @@ end
 local Scene = {}
 Scene.__index = Scene
 
----Sets the position of the mouse in this scene.
----@param x number
----@param y number
-function Scene:setMousePosition(x, y)
+---Call when the mouse has moved.
+---@param x number The current X of the mouse.
+---@param y number The current Y of the mouse.
+---@param dx number How much the mouse has moved on the X axis.
+---@param dy number How much the mouse has moved on the Y axis.
+function Scene:moveMouse(x, y, dx, dy)
   self._mouseX = x
   self._mouseY = y
   self:resolveOverlappingElements()
   if self._pressedElement then
     if self._pressedElement.class.mouseMoved then
-      self._pressedElement.class.mouseMoved(self._pressedElement, x, y)
+      local rx, ry = self._pressedElement:getRelativeMouse()
+      self._pressedElement.class.mouseMoved(self._pressedElement, rx, ry, dx, dy)
     end
   else
     for _, e in ipairs(self._overlappingElements) do
       if e.class.mouseMoved then
-        e.class.mouseMoved(e, x, y)
+        local rx, ry = e:getRelativeMouse()
+        e.class.mouseMoved(e, rx, ry, dx, dy)
       end
     end
   end
