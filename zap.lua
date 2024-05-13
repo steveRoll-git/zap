@@ -313,7 +313,7 @@ function Scene:finish()
     end
   end
 
-  if self._renderedElementsHash ~= self._prevRenderedElementsHash then
+  if self._renderedElementsHash ~= self._prevRenderedElementsHash and self._mouseX then
     self:resolveOverlappingElements()
   end
 end
