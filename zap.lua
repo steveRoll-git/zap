@@ -77,6 +77,15 @@ function Element:getParent()
   return self._parent
 end
 
+---Returns the root element that this element is contained within.
+---@return Zap.Element
+function Element:getRoot()
+  if self._parent then
+    return self._parent:getRoot()
+  end
+  return self
+end
+
 ---Returns whether this element is currently hovered by the mouse.
 ---@return boolean hovered
 function Element:isHovered()
