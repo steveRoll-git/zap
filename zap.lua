@@ -263,9 +263,12 @@ end
 ---@param y any
 function Scene:wheelMoved(x, y)
   self:resolveOverlappingElements()
-  local last = self._overlappingElements[#self._overlappingElements]
-  if last and last.class.wheelMoved then
-    last.class.wheelMoved(last, x, y)
+  for i = #self._overlappingElements, 1, -1 do
+    local e = self._overlappingElements[i]
+    if e.class.wheelMoved then
+      e.class.wheelMoved(e, x, y)
+      break
+    end
   end
 end
 
