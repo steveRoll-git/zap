@@ -62,6 +62,12 @@ function Element:render(x, y, width, height)
   table.remove(self._scene._parentStack)
 end
 
+---Returns the scene this element was rendered in.
+---@return Zap.Scene
+function Element:getScene()
+  return self._scene
+end
+
 ---Returns the view that this element was last rendered in.
 ---@return number x
 ---@return number y
