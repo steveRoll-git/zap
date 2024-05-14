@@ -92,6 +92,12 @@ function Element:isHovered()
   return self._hovered
 end
 
+---Returns whether the mouse is anywhere over this element's rectangle, regardless of whether other elements appear in front of it.
+---@return boolean over
+function Element:isMouseOver()
+  return self._scene:doesMouseOverlapElement(self)
+end
+
 ---Returns whether `button` is currently pressed on this element.<br>
 ---If `button` is not given, returns whether _any_ mouse button is currently pressed on this element.
 ---@param button any?
