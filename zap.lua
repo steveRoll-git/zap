@@ -403,6 +403,14 @@ function Scene:isElementRendered(e)
   return not not self._renderedElementsLookup[e]
 end
 
+---Emulates a mouse press on the element.
+---@param e Zap.Element
+---@param button any
+function Scene:setPressedElement(e, button)
+  e._pressed[button] = true
+  self._pressedElement = e
+end
+
 ---Creates a new scene.
 ---@return Zap.Scene scene
 local function createScene()
