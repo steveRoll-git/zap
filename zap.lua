@@ -68,6 +68,13 @@ function Element:getScene()
   return self._scene
 end
 
+---By default, an element associates itself with a scene when it's first rendered.
+---If you need it to happen before it's rendered, you can call this method.
+---@param scene Zap.Scene
+function Element:setScene(scene)
+  self._scene = scene
+end
+
 ---Returns the view that this element was last rendered in.
 ---@return number x
 ---@return number y
@@ -229,7 +236,7 @@ function Scene:moveMouse(x, y, dx, dy)
   self._mouseY = y
   self:resolveOverlappingElements()
   if self._pressedElement then
-    if self._pressedElement.class.mouseMoved then
+    if self._pressedElement.class.mouseMoved and self:isElementRendered(self._pressedElement) then
       local rx, ry = self._pressedElement:getRelativeMouse()
       self._pressedElement.class.mouseMoved(self._pressedElement, rx, ry, dx, dy)
     end
