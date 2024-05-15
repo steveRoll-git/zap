@@ -21,6 +21,8 @@ end
 ---@field package _y number
 ---@field package _w number
 ---@field package _h number
+---@field package _prevW number
+---@field package _prevH number
 ---@field package _hovered boolean
 ---@field package _prevHovered boolean
 ---@field package _pressed table<any, true>
@@ -55,9 +57,15 @@ function Element:render(x, y, width, height)
   self._w = width
   self._h = height
 
+  if self.class.resized and self._prevW and (self._prevW ~= self._w or self._prevH ~= self._h) then
+    self.class.resized(self, width, height, self._prevW, self._prevH)
+  end
+
   if self.class.render then
     self.class.render(self, x, y, width, height)
   end
+
+  self._prevW, self._prevH = self._w, self._h
 
   table.remove(self._scene._parentStack)
 end
@@ -199,6 +207,7 @@ local elementClassMetatable = {
 ---@field mouseClicked fun(self: Zap.Element, button: any) Called when a mouse button is clicked (pressed & released) over this element.
 ---@field mouseMoved fun(self: Zap.Element, x: number, y: number, dx: number, dy: number) Called when the mouse is moved over the element. `x` and `y` are absolute coordinates.
 ---@field wheelMoved fun(self: Zap.Element, x: number, y: number) Called when the mousewheel is moved over the element.
+---@field resized fun(self: Zap.Element, w: number, h: number, prevW: number, prevH: number) Called when the element has been rendered with a different size.
 ---@field desiredWidth fun(self: Zap.Element): number Returns the width that this element desires to be rendered with.
 ---@field desiredHeight fun(self: Zap.Element): number Returns the height that this element desires to be rendered with.
 ---@operator call:Zap.Element
