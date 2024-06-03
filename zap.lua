@@ -304,15 +304,15 @@ function Scene:mouseReleased(button)
   end
 end
 
----Call when the mousewheel has moved.
----@param x any
----@param y any
-function Scene:wheelMoved(x, y)
+---Raises a custom event that will be fired for the topmost element under the mouse that implements it.
+---@param event string
+---@param ... any
+function Scene:raiseMouseEvent(event, ...)
   self:resolveOverlappingElements()
   for i = #self._overlappingElements, 1, -1 do
     local e = self._overlappingElements[i]
-    if e.class.wheelMoved then
-      e.class.wheelMoved(e, x, y)
+    if e.class[event] then
+      e.class[event](e, ...)
       break
     end
   end
