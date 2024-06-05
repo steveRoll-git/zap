@@ -262,7 +262,7 @@ end
 ---Call when a mouse button has been pressed.
 ---@param button any
 ---@param runBefore? fun(element: Zap.Element?) A function that will be called with the pressed element, just before its `mousePressed` event will be fired.
-function Scene:mousePressed(button, runBefore)
+function Scene:pressMouse(button, runBefore)
   self:resolveOverlappingElements()
   local last = self._overlappingElements[#self._overlappingElements]
   if runBefore then
@@ -279,7 +279,7 @@ end
 
 ---Call when a mouse button has been released.
 ---@param button any
-function Scene:mouseReleased(button)
+function Scene:releaseMouse(button)
   self:resolveOverlappingElements()
   local pressedElement
   if self._pressedElement then
