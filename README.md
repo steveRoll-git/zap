@@ -75,3 +75,13 @@ end
 And that's the gist of it!
 
 You can `render` elements from within other elements, so structure your UI however you see fit.
+
+## Extra
+
+Out of the box, Zap provides mouse movement, press and release events. If you want to add more events on top, such as mousewheel movement, use `Scene:raiseMouseEvent`:
+
+```lua
+function love.wheelmoved(x, y)
+  scene:raiseMouseEvent("wheelMoved", x, y)
+end
+```
