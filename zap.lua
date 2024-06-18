@@ -1,10 +1,3 @@
-local function aabsIntersect(x1, y1, w1, h1, x2, y2, w2, h2)
-  return x1 < x2 + w2 and
-      x2 < x1 + w1 and
-      y1 < y2 + h2 and
-      y2 < y1 + h1
-end
-
 -- A stack of scenes that are currently being drawn into.
 ---@type Zap.Scene[]
 local sceneStack = {}
@@ -28,6 +21,7 @@ end
 ---@field package _pressed table<any, true>
 ---@field package _parent? Zap.Element
 ---@field package _contained boolean
+---@field package _mouseTransforms Zap.MouseTransform[]
 local Element = {}
 Element.__index = function(t, i)
   return Element[i] or t.class[i]
@@ -51,6 +45,10 @@ function Element:render(x, y, width, height)
   table.insert(self._scene._renderedElements, self)
   self._scene._renderedElementsLookup[self] = true
   self._scene._renderedElementsHash = self._scene._renderedElementsHash .. tostring(self)
+
+  for i = 1, math.max(#self._mouseTransforms, #self._scene._mouseTransformStack) do
+    self._mouseTransforms[i] = self._scene._mouseTransformStack[i]
+  end
 
   self._x = x
   self._y = y
@@ -142,7 +140,11 @@ end
 ---@return number x
 ---@return number y
 function Element:getRelativeMouse()
-  return self._scene._mouseX - self._x, self._scene._mouseY - self._y
+  local mouseX, mouseY = self._scene._mouseX, self._scene._mouseY
+  for _, f in ipairs(self._mouseTransforms) do
+    mouseX, mouseY = f(mouseX, mouseY)
+  end
+  return mouseX - self._x, mouseY - self._y
 end
 
 ---Returns the width that this element desires to be rendered with.
@@ -179,9 +181,11 @@ end
 
 ---@param class Zap.ElementClass
 local function createElement(class, ...)
+  ---@type Zap.Element
   local self = setmetatable({}, Element)
   self.class = class
   self._pressed = {}
+  self._mouseTransforms = {}
   if self.class.init then
     self.class.init(self, ...)
   end
@@ -218,6 +222,8 @@ local function elementClass()
   return setmetatable({}, elementClassMetatable)
 end
 
+---@alias Zap.MouseTransform fun(x: number, y: number): number, number
+
 ---A scene keeps track of the elements rendered inside it, and dispatches mouse events to them.
 ---@class Zap.Scene
 ---@field package _mouseX number
@@ -231,7 +237,7 @@ end
 ---@field package _prevRenderedElementsHash string
 ---@field package _overlappingElements Zap.Element[]
 ---@field package _pressedElement Zap.Element
----@field package _releaseHandle boolean
+---@field package _mouseTransformStack Zap.MouseTransform[]
 local Scene = {}
 Scene.__index = Scene
 
@@ -246,6 +252,7 @@ function Scene:moveMouse(x, y, dx, dy)
   self:resolveOverlappingElements()
   if self._pressedElement then
     if self._pressedElement.class.mouseMoved and self:isElementRendered(self._pressedElement) then
+      -- TODO - transform the `dx` and `dy` parameters if mouseTransforms exist
       local rx, ry = self._pressedElement:getRelativeMouse()
       self._pressedElement.class.mouseMoved(self._pressedElement, rx, ry, dx, dy)
     end
@@ -345,6 +352,9 @@ end
 ---Finishes a scene's frame after drawing elements.
 function Scene:finish()
   assert(self._began and sceneStack[#sceneStack] == self, "attempt to finish a Scene that did not begin")
+  assert(#self._mouseTransformStack == 0,
+    "not all mouse transforms were popped\nverify that all calls to `pushMouseTransform` have a matching `popMouseTransform`")
+
   self._began = false
   table.remove(sceneStack)
 
@@ -365,7 +375,11 @@ end
 ---@param e Zap.Element
 ---@package
 function Scene:doesMouseOverlapElement(e)
-  return self._mouseX >= e._x and self._mouseY >= e._y and self._mouseX < e._x + e._w and self._mouseY < e._y + e._h
+  local mouseX, mouseY = self._mouseX, self._mouseY
+  for _, f in ipairs(e._mouseTransforms) do
+    mouseX, mouseY = f(mouseX, mouseY)
+  end
+  return mouseX >= e._x and mouseY >= e._y and mouseX < e._x + e._w and mouseY < e._y + e._h
 end
 
 ---@package
@@ -382,7 +396,7 @@ function Scene:resolveOverlappingElements()
     if hovered then
       for i = #self._overlappingElements, 1, -1 do
         local other = self._overlappingElements[i]
-        if aabsIntersect(e._x, e._y, e._w, e._h, other._x, other._y, other._w, other._h) and not other:isInHierarchy(e) then
+        if not other:isInHierarchy(e) then
           other._hovered = false
           table.remove(self._overlappingElements, i)
         end
@@ -433,6 +447,17 @@ function Scene:setPressedElement(e, button)
   self._pressedElement = e
 end
 
+---Pushes a function that will transform the mouse's position for all elements rendered after this call.
+---@param func Zap.MouseTransform
+function Scene:pushMouseTransform(func)
+  table.insert(self._mouseTransformStack, func)
+end
+
+---Pops the last mouse transform that was pushed with `pushMouseTransform`.
+function Scene:popMouseTransform()
+  table.remove(self._mouseTransformStack)
+end
+
 ---Creates a new scene.
 ---@return Zap.Scene scene
 local function createScene()
@@ -442,6 +467,7 @@ local function createScene()
   self._renderedElements = {}
   self._pressedElements = {}
   self._overlappingElements = {}
+  self._mouseTransformStack = {}
   return self
 end
 
