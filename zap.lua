@@ -22,6 +22,7 @@ end
 ---@field package _parent? Zap.Element
 ---@field package _contained boolean
 ---@field package _mouseTransforms Zap.MouseTransform[]
+---@field package _nextRenderCallbacks Zap.BeforeRenderCallback[]
 local Element = {}
 Element.__index = function(t, i)
   return Element[i] or t.class[i]
@@ -54,6 +55,11 @@ function Element:render(x, y, width, height)
   self._y = y
   self._w = width
   self._h = height
+
+  while #self._nextRenderCallbacks > 0 do
+    self._nextRenderCallbacks[1](self)
+    table.remove(self._nextRenderCallbacks, 1)
+  end
 
   if self.class.resized and self._prevW and (self._prevW ~= self._w or self._prevH ~= self._h) then
     self.class.resized(self, width, height, self._prevW, self._prevH)
@@ -179,6 +185,12 @@ function Element:setContained(contained)
   self._contained = contained
 end
 
+---Queues a function to run the next time the element is rendered - right after its view is set, but just before the element's `render` method is called.
+---@param func Zap.BeforeRenderCallback
+function Element:nextRender(func)
+  table.insert(self._nextRenderCallbacks, func)
+end
+
 ---@param class Zap.ElementClass
 local function createElement(class, ...)
   ---@type Zap.Element
@@ -186,6 +198,7 @@ local function createElement(class, ...)
   self.class = class
   self._pressed = {}
   self._mouseTransforms = {}
+  self._nextRenderCallbacks = {}
   if self.class.init then
     self.class.init(self, ...)
   end
@@ -223,6 +236,7 @@ local function elementClass()
 end
 
 ---@alias Zap.MouseTransform fun(x: number, y: number): number, number
+---@alias Zap.BeforeRenderCallback fun(e: Zap.Element)
 
 ---A scene keeps track of the elements rendered inside it, and dispatches mouse events to them.
 ---@class Zap.Scene
