@@ -476,6 +476,8 @@ end
 ---@return Zap.Scene scene
 local function createScene()
   local self = setmetatable({}, Scene)
+  self._mouseX = 0
+  self._mouseY = 0
   self._parentStack = {}
   self._began = false
   self._renderedElements = {}
