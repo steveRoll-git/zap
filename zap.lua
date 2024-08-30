@@ -219,11 +219,10 @@ local elementClassMetatable = {
 ---@field render fun(self: Zap.Element, x: number, y: number, width: number, height: number) Called when the element needs to render its contents to the screen. Additional elements may be rendered here.
 ---@field mouseEntered fun(self: Zap.Element) Called when the mouse enters this element.
 ---@field mouseExited fun(self: Zap.Element) Called when the mouse exits this element.
----@field mousePressed fun(self: Zap.Element, button: any) Called when a mouse button is pressed over this element.
+---@field mousePressed fun(self: Zap.Element, button: any): boolean? Called when a mouse button is pressed over this element.<br>May optionally return a boolean that says whether this event was "consumed" - if false, the event will be propagated to the element's parent. `true` by default.
 ---@field mouseReleased fun(self: Zap.Element, button: any) Called when a mouse button is released over this element.
 ---@field mouseClicked fun(self: Zap.Element, button: any) Called when a mouse button is clicked (pressed & released) over this element.
 ---@field mouseMoved fun(self: Zap.Element, x: number, y: number, dx: number, dy: number) Called when the mouse is moved over the element. `x` and `y` are absolute coordinates.
----@field wheelMoved fun(self: Zap.Element, x: number, y: number) Called when the mousewheel is moved over the element.
 ---@field resized fun(self: Zap.Element, w: number, h: number, prevW: number, prevH: number) Called when the element has been rendered with a different size.
 ---@field desiredWidth fun(self: Zap.Element): number Returns the width that this element desires to be rendered with.
 ---@field desiredHeight fun(self: Zap.Element): number Returns the height that this element desires to be rendered with.
@@ -250,7 +249,7 @@ end
 ---@field package _prevRenderedElements Zap.Element[]
 ---@field package _prevRenderedElementsHash string
 ---@field package _overlappingElements Zap.Element[]
----@field package _pressedElement Zap.Element
+---@field package _pressedElement Zap.Element?
 ---@field package _mouseTransformStack Zap.MouseTransform[]
 local Scene = {}
 Scene.__index = Scene
@@ -290,10 +289,21 @@ function Scene:pressMouse(button, runBefore)
     runBefore(last)
   end
   if last then
-    last._pressed[button] = true
-    if last.class.mousePressed then
-      last.class.mousePressed(last, button)
-    end
+    repeat
+      ---@type boolean?
+      local consumed = false
+      last._pressed[button] = true
+      if last.class.mousePressed then
+        consumed = last.class.mousePressed(last, button)
+        if consumed == nil then
+          consumed = true
+        end
+      end
+      if not consumed then
+        last._pressed[button] = nil
+        last = last._parent
+      end
+    until consumed or not last
   end
   self._pressedElement = last
 end
@@ -302,40 +312,47 @@ end
 ---@param button any
 function Scene:releaseMouse(button)
   self:resolveOverlappingElements()
-  local pressedElement
-  if self._pressedElement then
-    pressedElement = self._pressedElement
-    local e = self._pressedElement
-    local prevPressed = e._pressed[button]
-    e._pressed[button] = nil
-    if e.class.mouseReleased then
-      e.class.mouseReleased(e, button)
+  local pressedElement = self._pressedElement
+  if pressedElement then
+    local prevPressed = pressedElement._pressed[button]
+    pressedElement._pressed[button] = nil
+    if pressedElement.class.mouseReleased then
+      pressedElement.class.mouseReleased(pressedElement, button)
     end
-    if prevPressed and e._hovered and e.class.mouseClicked then
-      e.class.mouseClicked(e, button)
+    if prevPressed and pressedElement._hovered and pressedElement.class.mouseClicked then
+      pressedElement.class.mouseClicked(pressedElement, button)
     end
-    if not next(e._pressed) then
+    if not next(pressedElement._pressed) then
       self._pressedElement = nil
     end
   end
-  for i, e in ipairs(self._overlappingElements) do
+  for _, e in ipairs(self._overlappingElements) do
     if e ~= pressedElement and e.class.mouseReleased then
       e.class.mouseReleased(e, button)
     end
   end
 end
 
----Raises a custom event that will be fired for the topmost element under the mouse that implements it.
+---Raises a custom event that will be fired for the topmost element under the mouse that implements it.<br>
+---Will be bubbled up similarly to `mousePressed`.
 ---@param event string
 ---@param ... any
 function Scene:raiseMouseEvent(event, ...)
   self:resolveOverlappingElements()
-  for i = #self._overlappingElements, 1, -1 do
-    local e = self._overlappingElements[i]
-    if e.class[event] then
-      e.class[event](e, ...)
-      break
-    end
+  local last = self._overlappingElements[#self._overlappingElements]
+  if last then
+    repeat
+      local consumed = false
+      if last.class[event] then
+        consumed = last.class[event](last, ...)
+        if consumed == nil then
+          consumed = true
+        end
+      end
+      if not consumed then
+        last = last._parent
+      end
+    until consumed or not last
   end
 end
 
