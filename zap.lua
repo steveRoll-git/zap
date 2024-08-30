@@ -20,7 +20,7 @@ end
 ---@field package _prevHovered boolean
 ---@field package _pressed table<any, true>
 ---@field package _parent? Zap.Element
----@field package _contained boolean
+---@field package _container boolean
 ---@field package _mouseTransforms Zap.MouseTransform[]
 ---@field package _nextRenderCallbacks Zap.BeforeRenderCallback[]
 local Element = {}
@@ -179,10 +179,10 @@ function Element:isInHierarchy(other)
   return false
 end
 
----Set whether an element considers itself hovered only if its parent is hovered as well.
----@param contained boolean
-function Element:setContained(contained)
-  self._contained = contained
+---Set whether this element is a "container" - the children of container elements will be considered hovered only if the container element is hovered as well.
+---@param container boolean
+function Element:setContainer(container)
+  self._container = container
 end
 
 ---Queues a function to run the next time the element is rendered - right after its view is set, but just before the element's `render` method is called.
@@ -419,11 +419,22 @@ function Scene:resolveOverlappingElements()
 
   self._overlappingElements = {}
 
+  local inUnhoveredContainer = false
+  -- If a container element is not hovered, this will be set to its parent and
+  -- `inUnhoveredContainer` will be set to true, and all subsequent rendered
+  -- elements will also be considered not hovered until the parent is seen again,
+  -- where `inUnhoveredContainer` will be reset to false.
+  ---@type Zap.Element?
+  local unhoveredContainerParent
+
   -- TODO implement spatial hashing here if needed
   for _, e in ipairs(self._renderedElements) do
     e._prevHovered = e._hovered
     e._hovered = false
-    local hovered = self:doesMouseOverlapElement(e) and (not e._contained or e._parent._hovered)
+    if inUnhoveredContainer and e._parent == unhoveredContainerParent then
+      inUnhoveredContainer = false
+    end
+    local hovered = not inUnhoveredContainer and self:doesMouseOverlapElement(e)
     if hovered then
       for i = #self._overlappingElements, 1, -1 do
         local other = self._overlappingElements[i]
@@ -434,6 +445,9 @@ function Scene:resolveOverlappingElements()
       end
       e._hovered = true
       table.insert(self._overlappingElements, e)
+    elseif e._container and not inUnhoveredContainer then
+      inUnhoveredContainer = true
+      unhoveredContainerParent = e._parent
     end
   end
 
