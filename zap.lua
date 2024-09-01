@@ -298,6 +298,8 @@ function Scene:pressMouse(button, runBefore)
         if consumed == nil then
           consumed = true
         end
+      elseif last.class.mouseClicked then
+        consumed = true
       end
       if not consumed then
         last._pressed[button] = nil
