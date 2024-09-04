@@ -23,6 +23,7 @@ end
 ---@field package _container boolean
 ---@field package _mouseTransforms Zap.MouseTransform[]
 ---@field package _nextRenderCallbacks Zap.BeforeRenderCallback[]
+---@field package _providedValues table<any, any>
 local Element = {}
 Element.__index = function(t, i)
   return Element[i] or t.class[i]
@@ -191,6 +192,22 @@ function Element:nextRender(func)
   table.insert(self._nextRenderCallbacks, func)
 end
 
+---Provides a value that children of this element can `inject`.
+---@param key any
+---@param value any
+function Element:provide(key, value)
+  self._providedValues[key] = value
+end
+
+---Returns the value that was `provide`d with the same key by a parent.
+---
+---Note that this may only be used during or after the element's first render.
+---@param key any
+---@return any
+function Element:inject(key)
+  return self._providedValues[key] or (self._parent and self._parent:inject(key))
+end
+
 ---@param class Zap.ElementClass
 local function createElement(class, ...)
   ---@type Zap.Element
@@ -199,6 +216,7 @@ local function createElement(class, ...)
   self._pressed = {}
   self._mouseTransforms = {}
   self._nextRenderCallbacks = {}
+  self._providedValues = {}
   if self.class.init then
     self.class.init(self, ...)
   end
@@ -448,7 +466,7 @@ function Scene:resolveOverlappingElements()
       unhoveredContainer = e
     end
   end
-  
+
   for _, e in ipairs(prevOverlapping) do
     if not e._hovered and e.class.mouseExited then
       e.class.mouseExited(e)
