@@ -528,7 +528,6 @@ local function createScene()
   self._parentStack = {}
   self._began = false
   self._renderedElements = {}
-  self._pressedElements = {}
   self._overlappingElements = {}
   self._mouseTransformStack = {}
   return self
