@@ -21,6 +21,7 @@ end
 ---@field package _pressed table<any, true>
 ---@field package _parent? Zap.Element
 ---@field package _container boolean
+---@field package _ignoreContainer boolean
 ---@field package _mouseTransforms Zap.MouseTransform[]
 ---@field package _nextRenderCallbacks Zap.BeforeRenderCallback[]
 ---@field package _providedValues table<any, any>
@@ -184,6 +185,12 @@ end
 ---@param container boolean
 function Element:setContainer(container)
   self._container = container
+end
+
+---Set whether this element should ignore any parent container elements, to be able to be considered hovered even if a container parent isn't hovered.
+---@param ignoreContainer boolean
+function Element:setIgnoreContainer(ignoreContainer)
+  self._ignoreContainer = ignoreContainer
 end
 
 ---Queues a function to run the next time the element is rendered - right after its view is set, but just before the element's `render` method is called.
@@ -451,7 +458,7 @@ function Scene:resolveOverlappingElements()
     if unhoveredContainer and not unhoveredContainer:isInHierarchy(e) then
       unhoveredContainer = nil
     end
-    local hovered = not unhoveredContainer and self:doesMouseOverlapElement(e)
+    local hovered = (e._ignoreContainer or not unhoveredContainer) and self:doesMouseOverlapElement(e)
     if hovered then
       for i = #self._overlappingElements, 1, -1 do
         local other = self._overlappingElements[i]
